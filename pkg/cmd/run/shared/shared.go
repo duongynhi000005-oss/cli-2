@@ -584,10 +584,16 @@ func GetRun(client *api.Client, repo ghrepo.Interface, runID string, attempt uin
 		}
 	}
 
-	// Set name to workflow name
+	// Set name to workflow name. If the error is an HTTPError with status 404,
+	// this is likely an organization or enterprise ruleset workflow that is not
+	// directly readable in the consumer repository; fall back to an empty
+	// workflow name just like preloadWorkflowNames does.
 	workflow, err := workflowShared.GetWorkflow(client, repo, result.WorkflowID)
 	if err != nil {
-		return nil, err
+		var httpErr api.HTTPError
+		if !errors.As(err, &httpErr) || httpErr.StatusCode != http.StatusNotFound {
+			return nil, err
+		}
 	} else {
 		result.workflowName = workflow.Name
 	}

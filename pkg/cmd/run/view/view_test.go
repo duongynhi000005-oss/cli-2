@@ -1562,6 +1562,28 @@ func TestViewRun(t *testing.T) {
 			wantOut: legacySadJobRunWithNoStepLogsLogOutput,
 		},
 		{
+			name: "noninteractive with job log-failed when workflow metadata returns 404 (#14822)",
+			opts: &ViewOptions{
+				JobID:     "22",
+				LogFailed: true,
+			},
+			httpStubs: func(reg *httpmock.Registry) {
+				reg.Register(
+					httpmock.REST("GET", "repos/OWNER/REPO/actions/jobs/22"),
+					httpmock.JSONResponse(shared.LegacyFailedJobWithoutStepLogs))
+				reg.Register(
+					httpmock.REST("GET", "repos/OWNER/REPO/actions/runs/1234"),
+					httpmock.JSONResponse(shared.FailedRun))
+				reg.Register(
+					httpmock.REST("GET", "repos/OWNER/REPO/actions/runs/1234/logs"),
+					httpmock.BinaryResponse(zipArchive))
+				reg.Register(
+					httpmock.REST("GET", "repos/OWNER/REPO/actions/workflows/123"),
+					httpmock.StatusStringResponse(404, "not found"))
+			},
+			wantOut: legacySadJobRunWithNoStepLogsLogOutput,
+		},
+		{
 			name: "interactive with run log, legacy service data, with no step logs available (#10551)",
 			tty:  true,
 			opts: &ViewOptions{
