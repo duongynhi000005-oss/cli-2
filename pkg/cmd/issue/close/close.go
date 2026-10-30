@@ -114,6 +114,22 @@ func closeRun(opts *CloseOptions) error {
 		return err
 	}
 
+	if opts.Comment != "" {
+		commentOpts := &prShared.CommentableOptions{
+			Body:       opts.Comment,
+			HttpClient: opts.HttpClient,
+			InputType:  prShared.InputTypeInline,
+			Quiet:      true,
+			RetrieveCommentable: func() (prShared.Commentable, ghrepo.Interface, error) {
+				return issue, baseRepo, nil
+			},
+		}
+		err := prShared.CommentableRun(commentOpts)
+		if err != nil {
+			return err
+		}
+	}
+
 	if issue.State == "CLOSED" {
 		fmt.Fprintf(opts.IO.ErrOut, "%s Issue %s#%d (%s) is already closed\n", cs.Yellow("!"), ghrepo.FullName(baseRepo), issue.Number, issue.Title)
 		return nil
