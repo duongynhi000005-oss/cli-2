@@ -74,6 +74,22 @@ func closeRun(opts *CloseOptions) error {
 		return err
 	}
 
+	if opts.Comment != "" {
+		commentOpts := &shared.CommentableOptions{
+			Body:       opts.Comment,
+			HttpClient: opts.HttpClient,
+			InputType:  shared.InputTypeInline,
+			Quiet:      true,
+			RetrieveCommentable: func() (shared.Commentable, ghrepo.Interface, error) {
+				return pr, baseRepo, nil
+			},
+		}
+		err := shared.CommentableRun(commentOpts)
+		if err != nil {
+			return err
+		}
+	}
+
 	if pr.State == "MERGED" {
 		fmt.Fprintf(opts.IO.ErrOut, "%s Pull request %s#%d (%s) can't be closed because it was already merged\n", cs.FailureIcon(), ghrepo.FullName(baseRepo), pr.Number, pr.Title)
 		return cmdutil.SilentError
